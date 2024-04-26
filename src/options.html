@@ -2,6 +2,7 @@
 <html>
 <!--
 Copyright (C) 2017  Paul Marks  http://www.pmarks.net/
+Copyright (C) 2024  ziad87      https://ziad87.net/
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -41,6 +42,9 @@ limitations under the License.
     display: flex;
     padding: 1em;
     align-items: center;
+  }
+  .popupcolor label {
+    padding: .2em;
   }
   input[type="radio"] {
     margin-right: 1em;
@@ -115,10 +119,13 @@ limitations under the License.
         </td>
       </tr>
     </table>
+    <div class="popupcolor">
+      <h1>Popup color scheme</h1>
+      <label><input type="radio" name="popupColorScheme" value="system" class="disabler"> System</label>
+      <label><input type="radio" name="popupColorScheme" value="dark" class="disabler"> Dark</label>
+      <label><input type="radio" name="popupColorScheme" value="light" class="disabler"> Light</label>
+    </div>
   </form>
-
-  <br>
-  Note that popups use the system light/dark theme.
 
   <div style="display:inline-block; padding-top:1.5em; width:100%">
     <button id="revert_btn" style="float:left" class="disabler">Revert to Defaults</button>

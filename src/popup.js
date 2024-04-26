@@ -1,5 +1,6 @@
 /*
 Copyright (C) 2011  Paul Marks  http://www.pmarks.net/
+Copyright (C) 2024  ziad87      https://ziad87.net/
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,8 +20,45 @@ limitations under the License.
 const ALL_URLS = "<all_urls>";
 const IS_MOBILE = /\bMobile\b/.test(navigator.userAgent);
 
+// Partial code from ipvfoobar.
+// -- hostnames & asn lookups --
+window.dnsCache = {
+  hosts: {},
+  asns: {}
+}
+
 // Snip domains longer than this, to avoid horizontal scrolling.
-const LONG_DOMAIN = 50;
+const LONG_DOMAIN = 40; // Config option maybe?
+function snipDomainName(domain){
+  if (domain.length > LONG_DOMAIN) {
+    return makeSnippedText(domain, Math.floor(LONG_DOMAIN / 2));
+  } else {
+    return document.createTextNode(domain);
+  }
+}
+
+// helpers for buttons
+const getDomain = host => {
+  return psl.parse(host)?.domain;
+}
+
+function getWhois(domain) {
+  // more tlds?
+  if (domain.endsWith(".cz")) return "https://www.nic.cz/whois/domain/" + encodeURIComponent(getDomain(domain));
+  return "https://who.is/whois/" + encodeURIComponent(getDomain(domain));
+}
+
+function addBtn(url, letter, title, utilsTd){
+  const btn = document.createElement("a");
+  btn.href = url;
+  btn.textContent = letter;
+  btn.target = "_blank";
+  btn.className = "pbtn";
+  btn.title = title;
+  utilsTd.appendChild(btn);
+}
+
+
 
 const tabId = window.location.hash.substr(1);
 if (!isFinite(Number(tabId))) {
@@ -36,6 +74,7 @@ window.onload = async function() {
   if (IS_MOBILE) {
     document.getElementById("mobile_footer").style.display = "flex";
   }
+  setMode(getCurrentMode(options));
   connectToExtension();
 };
 
@@ -273,6 +312,120 @@ function makeRow(isFirst, tuple) {
   addrTd.onclick = handleClick;
   addrTd.oncontextmenu = handleContextMenu;
 
+  let hostDiv = document.createElement("div");
+  hostDiv.style.fontSize = "small";
+
+  let originDiv = document.createElement("div");
+  originDiv.style.fontSize = "small";
+
+  const hostSpan = document.createElement("span");
+  const originSpan = document.createElement("span");
+
+  let ptr;
+  let origin;
+  if (addr.includes(".")) {
+    let dnsName = addr.split(".").reverse().join(".");
+    ptr = dnsName + ".in-addr.arpa";
+    origin = dnsName + ".origin.asn.cymru.com";
+  } else if (addr.includes(":")) {
+    let dnsName = full_IPv6(addr).replaceAll(":", "").split("").reverse().join(".");
+    ptr = dnsName + ".ip6.arpa";
+    origin = dnsName + ".origin6.asn.cymru.com";
+  } else {
+    hostDiv = null;
+  }
+
+  if (ptr) {
+    if (typeof window.dnsCache.hosts[ptr] === "undefined") {
+      hostSpan.textContent = "resolving...";
+      fetch("https://dns.google/resolve?name=" + ptr + "&type=PTR").then(res => res.json()).then(res => {
+        hostSpan.textContent = '';
+        let hasFoundHostname = false;
+        if (res.Answer){
+          for (let answer of res.Answer){
+            if (answer.data && answer.type === 12) { // PTR
+              window.dnsCache.hosts[ptr] = answer.data.slice(0, -1);
+              hostSpan.appendChild(snipDomainName(window.dnsCache.hosts[ptr]));
+              hasFoundHostname = true;
+              break;
+            }
+          }
+        }
+        if (!hasFoundHostname){
+          window.dnsCache.hosts[ptr] = false;
+          hostDiv.remove();
+          hostDiv = null;
+        }
+      });
+    } else {
+      hostSpan.textContent = '';
+      if (window.dnsCache.hosts[ptr]) {
+        hostSpan.appendChild(snipDomainName(window.dnsCache.hosts[ptr]));
+      } else {
+        hostDiv = null;
+      }
+    }
+  } else {
+    hostDiv = null;
+  }
+
+  if (origin) {
+    if (typeof window.dnsCache.asns[origin] === "undefined") {
+      originSpan.textContent = "fetching...";
+      fetch("https://dns.google/resolve?name=" + origin + "&type=TXT").then(res => res.json()).then(async res => {
+        if (res.Answer && res.Answer[0] && res.Answer[0].data) {
+          window.dnsCache.asns[origin] = "AS" + res.Answer[0].data.split('|')[0].slice(0, -1);
+          let res2 = await fetch("https://dns.google/resolve?name=" + window.dnsCache.asns[origin] + ".asn.cymru.com&type=TXT").then(res => res.json());
+          if (res2.Answer && res2.Answer[0] && res2.Answer[0].data){
+            let ans = res2.Answer[0].data.split(' |');
+            window.dnsCache.asns[origin] = `AS${ans[0]} ${ans[4].split(' ')[1].split(',')[0]}, ${ans[1]}`;
+            originSpan.textContent = window.dnsCache.asns[origin];
+          }
+        } else {
+          window.dnsCache.asns[origin] = false;
+          originDiv.remove();
+          originDiv = null;
+        }
+      });
+    } else {
+      if (window.dnsCache.asns[origin]) {
+        originSpan.textContent = window.dnsCache.asns[origin];
+      } else {
+        originDiv = null;
+      }
+    }
+  } else {
+    originDiv = null;
+  }
+
+  if (hostDiv) {
+    hostSpan.onclick = handleClick;
+    hostSpan.oncontextmenu = handleContextMenu;
+
+    hostDiv.appendChild(document.createTextNode(" → "));
+    hostDiv.appendChild(hostSpan);
+  }
+
+  if (originDiv) {
+    originSpan.onclick = handleClick;
+    originSpan.oncontextmenu = handleContextMenu;
+
+    originDiv.appendChild(document.createTextNode(" → "));
+    originDiv.appendChild(originSpan);
+  }
+
+  if (ptr && hostDiv) addrTd.appendChild(hostDiv);
+  if (origin && originDiv) addrTd.appendChild(originDiv);
+
+  const utilsTd = document.createElement("td");
+
+  // Perhaps these buttons should be icons? Or something else?
+  addBtn(getWhois(domain), "W", "WHOIS", utilsTd);
+  addBtn("https://search.arin.net/rdap/?query=" + encodeURIComponent(addr), "A", "ARIN", utilsTd);
+  addBtn("https://apps.db.ripe.net/db-web-ui/query?searchtext=" + encodeURIComponent(addr), "R", "RIPE", utilsTd);
+  addBtn("https://ipinfo.io/" + addr, "I", "IPInfo", utilsTd);
+  addBtn("https://bgp.tools/prefix/" + addr, "B", "BGP.Tools", utilsTd);
+
   // Build the (possibly invisible) "WebSocket/Cached" column.
   // We don't need to worry about drawing both, because a cached WebSocket
   // would be nonsensical.
@@ -301,6 +454,7 @@ function makeRow(isFirst, tuple) {
   tr.appendChild(domainTd);
   tr.appendChild(addrTd);
   tr.appendChild(cacheTd);
+  tr.appendChild(utilsTd);
   return tr;
 }
 
@@ -409,4 +563,70 @@ function selectWholeAddress(node, sel) {
     sel.removeAllRanges();
     sel.addRange(range);
   }
+}
+
+// dark mode
+const prefersDark = () => window?.matchMedia?.('(prefers-color-scheme:dark)')?.matches ?? false;
+function getCurrentMode(opts = options){
+  let darkMode = false;
+  switch (opts.popupColorScheme){
+    case 'light':
+      darkMode = false;
+      break;
+    case 'dark':
+      darkMode = true;
+      break;
+    case 'system':
+    default:
+      darkMode = prefersDark();
+  }
+  return darkMode;
+}
+function setMode(dark){
+  if (document.body){
+    if (dark) document.body.classList.add('dark')
+    else document.body.classList.remove('dark');
+  }
+}
+watchOptions(function(optionsChanged) {
+  if (optionsChanged.includes('popupColorScheme')){
+    setMode(getCurrentMode(options));
+  }
+});
+
+function full_IPv6(ip_string) {
+  // replace ipv4 address if any
+  var ipv4 = ip_string.match(/(.*:)([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$)/);
+  if (ipv4) {
+    var ip_string = ipv4[1];
+    ipv4 = ipv4[2].match(/[0-9]+/g);
+    for (var i = 0; i < 4; i++) {
+      var byte = parseInt(ipv4[i], 10);
+      ipv4[i] = ("0" + byte.toString(16)).substr(-2);
+    }
+    ip_string += ipv4[0] + ipv4[1] + ':' + ipv4[2] + ipv4[3];
+  }
+
+  // take care of leading and trailing ::
+  ip_string = ip_string.replace(/^:|:$/g, '');
+
+  var ipv6 = ip_string.split(':');
+
+  for (var i = 0; i < ipv6.length; i++) {
+    var hex = ipv6[i];
+    if (hex != "") {
+      // normalize leading zeros
+      ipv6[i] = ("0000" + hex).substr(-4);
+    }
+    else {
+      // normalize grouped zeros ::
+      hex = [];
+      for (var j = ipv6.length; j <= 8; j++) {
+        hex.push('0000');
+      }
+      ipv6[i] = hex.join(':');
+    }
+  }
+
+  return ipv6.join(':');
 }

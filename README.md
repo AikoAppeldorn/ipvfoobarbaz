@@ -1,26 +1,20 @@
-**IPvFoo** is a Chrome/Firefox extension that adds an icon to indicate whether the current page was fetched using IPv4 or IPv6. When you click the icon, a pop-up appears, listing the IP address for each domain that served the page elements.
+**IPvFooBarBaz** is a Chrome/Firefox extension that adds an icon to indicate whether the current page was fetched using IPv4 or IPv6. When you click the icon, a pop-up appears, listing the IP address for each domain that served the page elements, as well as their hostname and ASN (if available).
 
-Everything is captured privately using the webRequest API, without creating any additional network traffic.
+Everything is captured privately using the webRequest API, however Google DNS is used to fetch hostnames, as well as Cymru's IP to ASN services.
+
+This is a fork of the original IPvFoo, and uses code from the IPvFooBar (which itself is a fork of IPvFoo).
 
 ## Screenshot
 ![Screenshot](/misc/screenshot_webstore_1_640x400.png?raw=true)
 
 ## Add to Chrome
-https://chrome.google.com/webstore/detail/ipvfoo/ecanpcehffngcegjmadlcijfolapggal
-
-<picture><img src="https://badgen.net/chrome-web-store/v/ecanpcehffngcegjmadlcijfolapggal"></picture>
-<picture><img src="https://badgen.net/chrome-web-store/users/ecanpcehffngcegjmadlcijfolapggal"></picture>
-<picture><img src="https://badgen.net/chrome-web-store/rating/ecanpcehffngcegjmadlcijfolapggal"></picture>
+Coming Soon
 
 ## Add to Firefox
-https://addons.mozilla.org/addon/ipvfoo/  
-
-<picture><img src="https://badgen.net/amo/v/ipvfoo"></picture>
-<picture><img src="https://badgen.net/amo/users/ipvfoo"></picture>
-<picture><img src="https://badgen.net/amo/rating/ipvfoo"></picture>
+Coming Soon
 
 ## Add to Edge
-https://microsoftedge.microsoft.com/addons/detail/ipvfoo/dphnkggpaicipkljebciobedeiaiofod  
+Coming Soon
 *(You can also run the Chrome version on Edge, as they are identical.)*
 
 ## Safari?

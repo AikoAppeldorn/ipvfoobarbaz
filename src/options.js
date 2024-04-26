@@ -1,5 +1,6 @@
 /*
 Copyright (C) 2017  Paul Marks  http://www.pmarks.net/
+Copyright (C) 2024  ziad87      https://ziad87.net/
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,7 +24,7 @@ window.onload = async () => {
   await spriteImgReady;
 
   for (const option of Object.keys(DEFAULT_OPTIONS)) {
-    if (!option.endsWith("ColorScheme")) continue;
+    if (!["incognitoColorScheme", "regularColorScheme"].includes(option)) continue;
     for (const color of ["darkfg", "lightfg"]) {
       const canvas = document.getElementById(`${option}:${color}`);
       const ctx = canvas.getContext("2d");

@@ -1011,40 +1011,9 @@ chrome.webRequest.onErrorOccurred.addListener(forgetRequest, FILTER_ALL_URLS);
 
 // -- contextMenus --
 
-// When the user right-clicks an IP address in the popup window, add a menu
-// item to look up the address on bgp.he.net.  I don't like picking favorites,
-// so I'm open to making this a config option if someone recommends another
-// useful non-spammy service.
-//
-// Unless http://crbug.com/60758 gets resolved, the context menu's appearance
-// cannot vary based on content.
-const MENU_ID = "ipvfoo-lookup";
+// Context menus have been removed in favor of the buttons.
+// Perhaps a list of URLs or something could be added in the options
 
-chrome.contextMenus?.removeAll(() => {
-  chrome.contextMenus.create({
-    title: "Look up on bgp.he.net",
-    id: MENU_ID,
-    // Scope the menu to text selection in our popup windows.
-    contexts: ["selection"],
-    documentUrlPatterns: [chrome.runtime.getURL("popup.html")],
-  });
-});
-
-chrome.contextMenus?.onClicked.addListener((info, tab) => {
-  if (info.menuItemId != MENU_ID) return;
-  const text = info.selectionText;
-  if (IP4_CHARS.test(text) || IP6_CHARS.test(text)) {
-    chrome.tabs.create({url: `https://bgp.he.net/ip/${text}`});
-  } else if (DNS_CHARS.test(text)) {
-    chrome.tabs.create({url: `https://bgp.he.net/dns/${text}`});
-  } else {
-    // Malformed selection; shake the popup content.
-    const tabId = /#(\d+)$/.exec(info.pageUrl);
-    if (tabId) {
-      popups.shake(Number(tabId[1]));
-    }
-  }
-});
 
 watchOptions(async (optionsChanged) => {
   await storageReady;

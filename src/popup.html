@@ -2,6 +2,7 @@
 <html>
 <!--
 Copyright (C) 2011  Paul Marks  http://www.pmarks.net/
+Copyright (C) 2024  ziad87      https://ziad87.net/
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -134,36 +135,54 @@ img::selection {
   display: none;
 }
 
+.pbtn {
+  color: #fafafa;
+  background-color: #333;
+  text-decoration: none;
+  font-family: monospace;
+  padding: 0px 3px;
+  margin-left: 1px;
+  font-weight: normal;
+}
+.pbtn:hover{
+  opacity: 0.75;
+}
+.pbtn:active{
+  opacity: 0.5;
+}
+
 /* dark mode */
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #222;
-    color: #eee;
-  }
-  .sslImg {
-    filter: invert(1);
-  }
-  .snipImg {
-    filter: invert(1);
-  }
-  .addrTd {
-    color: #8080ff;
-  }
-  .ip4 {
-    color: #ff8080;
-  }
-  .ip6 {
-    color: #80ff80;
-  }
-  .highlight {
-    background-color: #505030;
-  }
-  #pattern_icon_darkfg {
-    display: none;
-  }
-  #pattern_icon_lightfg {
-    display: initial;
-  }
+body.dark {
+  background-color: #222;
+  color: #eee;
+}
+.dark .sslImg {
+  filter: invert(1);
+}
+.dark .snipImg {
+  filter: invert(1);
+}
+.dark .addrTd {
+  color: #8080ff;
+}
+.dark .ip4 {
+  color: #ff8080;
+}
+.dark .ip6 {
+  color: #80ff80;
+}
+.dark .highlight {
+  background-color: #505030;
+}
+.dark #pattern_icon_darkfg {
+  display: none;
+}
+.dark #pattern_icon_lightfg {
+  display: initial;
+}
+.dark .pbtn {
+  background-color: #aaa;
+  color: #000;
 }
 
 @keyframes shake {
@@ -184,6 +203,7 @@ img::selection {
 
 </style>
 <script type="text/javascript" src="common.js"></script>
+<script type="text/javascript" src="psl.min.js"></script>
 <script type="text/javascript" src="popup.js"></script>
 </head>
 <body>
