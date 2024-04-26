@@ -31,7 +31,6 @@
     "browser_style": false
   },
   "permissions": [
-    "contextMenus",
     "storage",
     "webNavigation",
     "webRequest"
