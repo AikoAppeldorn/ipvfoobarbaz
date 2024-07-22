@@ -483,6 +483,7 @@ class DomainInfo {
   addrVersion() {
     if (this.addr) {
       if (/^64:ff9b::/.test(this.addr)) return "4";  // RFC6052
+      if (/^64:ff9b:1:/.test(this.addr)) return "4"; // RFC8215
       if (this.addr.indexOf(".") >= 0) return "4";
       if (this.addr.indexOf(":") >= 0) return "6";
     }
