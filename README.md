@@ -8,14 +8,14 @@ This is a fork of the original IPvFoo, and uses code from the IPvFooBar (which i
 ![Screenshot](/misc/screenshot_webstore_1_640x400.png?raw=true)
 
 ## Add to Chrome
-Coming Soon
+https://chromewebstore.google.com/detail/ipvfoobarbaz/jiaodmfhmjdhefmljkipedcbpkplpfcn
 
 ## Add to Firefox
-Coming Soon
+https://addons.mozilla.org/firefox/addon/ipvfoobarbaz
 
 ## Add to Edge
 Coming Soon
-*(You can also run the Chrome version on Edge, as they are identical.)*
+*(You can also run the [Chrome version](https://chromewebstore.google.com/detail/ipvfoobarbaz/jiaodmfhmjdhefmljkipedcbpkplpfcn) on Edge, as they are identical.)*
 
 ## Safari?
 
