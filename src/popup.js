@@ -17,8 +17,9 @@ limitations under the License.
 
 "use strict";
 
+// Requires <script src="common.js">
+
 const ALL_URLS = "<all_urls>";
-const IS_MOBILE = /\bMobile\b/.test(navigator.userAgent);
 
 // Partial code from ipvfoobar.
 // -- hostnames & asn lookups --
@@ -78,6 +79,17 @@ window.onload = async function() {
   connectToExtension();
 };
 
+// Monitor for dark mode updates.
+const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+let darkMode = darkModeQuery.matches;
+darkModeQuery.addEventListener("change", async (event) => {
+  darkMode = event.matches;
+  await optionsReady;
+  if (lastColor) {
+    setColorIsDarkMode(lastColor, darkMode);
+  }
+});
+
 async function beg() {
   const p = await chrome.permissions.getAll();
   for (const origin of p.origins) {
@@ -101,14 +113,14 @@ function connectToExtension() {
   const port = chrome.runtime.connect(null, {name: tabId});
   port.onMessage.addListener((msg) => {
     document.bgColor = "";
-    console.log("onMessage", msg.cmd, msg);
+    //console.log("onMessage", msg.cmd, msg);
     switch (msg.cmd) {
       case "pushAll":
-        return pushAll(msg.tuples, msg.pattern, msg.spillCount);
+        return pushAll(msg.tuples, msg.pattern, msg.color, msg.spillCount);
       case "pushOne":
         return pushOne(msg.tuple);
       case "pushPattern":
-        return pushPattern(msg.pattern);
+        return pushPattern(msg.pattern, msg.color);
       case "pushSpillCount":
         return pushSpillCount(msg.spillCount);
       case "shake":
@@ -123,12 +135,12 @@ function connectToExtension() {
 }
 
 // Clear the table, and fill it with new data.
-function pushAll(tuples, pattern, spillCount) {
+function pushAll(tuples, pattern, color, spillCount) {
   removeChildren(table);
   for (let i = 0; i < tuples.length; i++) {
     table.appendChild(makeRow(i == 0, tuples[i]));
   }
-  pushPattern(pattern);
+  pushPattern(pattern, color);
   pushSpillCount(spillCount);
 }
 
@@ -160,7 +172,12 @@ function pushOne(tuple) {
 }
 
 let lastPattern = "";
-async function pushPattern(pattern) {
+let lastColor = "";  // regular/incognito color scheme
+async function pushPattern(pattern, color) {
+  if (lastColor != color) {
+    lastColor = color;
+    setColorIsDarkMode(lastColor, darkMode);
+  }
   if (!IS_MOBILE) {
     return;
   }
@@ -222,13 +239,6 @@ function scrollbarHack() {
   }, 200);
 }
 
-function removeChildren(n) {
-  while (n.hasChildNodes()) {
-    n.removeChild(n.lastChild);
-  }
-  return n;
-}
-
 // Copy the contents of src into dst, making minimal changes.
 function minimalCopy(src, dst) {
   dst.className = src.className;
@@ -255,12 +265,12 @@ function makeImg(src, title) {
 }
 
 function makeSslImg(flags) {
-  switch (flags & (FLAG_SSL | FLAG_NOSSL)) {
-    case FLAG_SSL | FLAG_NOSSL:
+  switch (flags & (DFLAG_SSL | DFLAG_NOSSL)) {
+    case DFLAG_SSL | DFLAG_NOSSL:
       return makeImg(
           "gray_schrodingers_lock.png",
           "Mixture of HTTPS and non-HTTPS connections.");
-    case FLAG_SSL:
+    case DFLAG_SSL:
       return makeImg(
           "gray_lock.png",
           "Connection uses HTTPS.\n" +
@@ -306,7 +316,7 @@ function makeRow(isFirst, tuple) {
     case "4": addrClass = " ip4"; break;
     case "6": addrClass = " ip6"; break;
   }
-  const connectedClass = (flags & FLAG_CONNECTED) ? " highlight" : "";
+  const connectedClass = (flags & DFLAG_CONNECTED) ? " highlight" : "";
   addrTd.className = `addrTd${addrClass}${connectedClass}`;
   addrTd.appendChild(document.createTextNode(addr));
   addrTd.onclick = handleClick;
@@ -434,15 +444,19 @@ function makeRow(isFirst, tuple) {
   // the Cached icon because I'm too lazy to align multiple columns properly.
   const cacheTd = document.createElement("td");
   cacheTd.className = `cacheTd${connectedClass}`;
-  if (flags & FLAG_WEBSOCKET) {
+  if (flags & DFLAG_WEBSOCKET) {
     cacheTd.appendChild(
         makeImg("websocket.png", "WebSocket handshake; connection may still be active."));
     cacheTd.style.paddingLeft = '6pt';
-  } else if (!(flags & FLAG_NOTWORKER)) {
+  } else if (flags & AFLAG_PREFETCH) {
+    cacheTd.appendChild(
+        makeImg("prefetch.png", "Prefetched request; may be proxied."));
+    cacheTd.style.paddingLeft = '6pt';
+  } else if (flags & AFLAG_WORKER) {
     cacheTd.appendChild(
         makeImg("serviceworker.png", "Service Worker request; possibly from a different tab."));
     cacheTd.style.paddingLeft = '6pt';
-  } else if (!(flags & FLAG_UNCACHED)) {
+  } else if (flags & AFLAG_CACHE) {
     cacheTd.appendChild(
         makeImg("cached_arrow.png", "Data from cached requests only."));
     cacheTd.style.paddingLeft = '6pt';

@@ -20,43 +20,35 @@ limitations under the License.
 // Requires <script src="common.js">
 
 window.onload = async () => {
-  disableAll(true);
-  await spriteImgReady;
-
-  for (const option of Object.keys(DEFAULT_OPTIONS)) {
-    if (!["incognitoColorScheme", "regularColorScheme"].includes(option)) continue;
-    for (const color of ["darkfg", "lightfg"]) {
-      const canvas = document.getElementById(`${option}:${color}`);
-      const ctx = canvas.getContext("2d");
-      const imageData = buildIcon("646", 16, color);
-      ctx.putImageData(imageData, 0, 0);
-    }
+  const ipv4pages = document.getElementById("ipv4pages");
+  for (const domain of IPV4_ONLY_DOMAINS.keys()) {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = `https://${domain}`;
+    a.target = "_blank";
+    a.textContent = domain;
+    li.appendChild(a);
+    ipv4pages.appendChild(li);
   }
 
   watchOptions(function(optionsChanged) {
     for (const option of optionsChanged) {
-      if (!option.endsWith("ColorScheme")) continue;
-      const radio = document.optionsForm[option];
-      radio.value = options[option];
+      if (option == NAT64_KEY) {
+        const table = document.getElementById("nat64");
+        removeChildren(table);
+        for (const packed96 of Array.from(options[NAT64_KEY]).sort()) {
+          const tr = document.createElement("tr");
+          const td = document.createElement("td");
+          td.appendChild(document.createTextNode(formatIPv6(packed96) + "/96"));
+          tr.appendChild(td);
+          table.appendChild(tr);
+        }
+      }
     }
-    disableAll(false);
   });
 
-  document.optionsForm.onchange = function(evt) {
-    const newOptions = {};
-    for (const option of Object.keys(DEFAULT_OPTIONS)) {
-      if (!option.endsWith("ColorScheme")) continue;
-      newOptions[option] = document.optionsForm[option].value;
-    }
-    if (setOptions(newOptions)) {
-      disableAll(true);
-    }
-  };
-
   document.getElementById("revert_btn").onclick = function() {
-    if (setOptions(DEFAULT_OPTIONS)) {
-      disableAll(true);
-    }
+    revertNAT64();
   };
 
   document.getElementById("dismiss_btn").onclick = function() {
@@ -66,10 +58,20 @@ window.onload = async () => {
       window.close();
     }
   };
-}
 
-function disableAll(disabled) {
-  for (const e of document.getElementsByClassName("disabler")) {
-    e.disabled = disabled;
+  // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=1946972
+  if (typeof browser != "undefined") {
+    document.body.addEventListener("click", function(e) {
+      if (e.target.tagName == "A" && (e.ctrlKey || e.metaKey || e.shiftKey)) {
+        window.open(e.target.href);
+        e.preventDefault();
+      }
+    });
+    document.body.addEventListener("auxclick", function(e) {
+      if (e.target.tagName == "A" && e.button == 1) {
+        window.open(e.target.href);
+        e.preventDefault();
+      }
+    });
   }
 }
